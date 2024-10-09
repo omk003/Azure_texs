@@ -1,5 +1,6 @@
 package com.example.chat_management.websocket;
 
+import com.example.chat_management.model.Message;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -8,6 +9,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import com.example.chat_management.model.UserStatus;
 import com.example.chat_management.repository.UserStatusRepository;
 import com.example.chat_management.service.ChatService;
+import com.example.chat_management.service.MessageService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -22,6 +24,8 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.List;
+
 
 @Component
 public class ChatWebSocketHandler extends TextWebSocketHandler {
@@ -31,6 +35,9 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     @Autowired
     private ChatService chatService;
+
+    @Autowired
+    private MessageService messageService;
 
     @Autowired
     private UserStatusRepository userStatusRepository;
@@ -80,46 +87,83 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         String[] parts = message.split(":", 2);
         if (parts.length == 2) {
             String sessionID = parts[1];
-            //username -> userNumber
+            // Fetch userNumber from the session ID
             String userNumber = fetchUserNumberFromSessionID(sessionID);
             if (userNumber != null) {
+                // Add the user session
                 userSessions.put(userNumber, session);
-                updateUserStatus(userNumber,"online");
-
+                // Update the user status to online
+                updateUserStatus(userNumber, "online");
+    
+                // Check if there are offline messages for this user
                 if (offlineMessages.containsKey(userNumber)) {
                     Queue<String> messages = offlineMessages.get(userNumber);
+    
+                    // Process each offline message
                     while (!messages.isEmpty()) {
-                        sendMessageToSession(session, messages.poll());
+                        String offlineMessage = messages.poll();
+    
+                        // Extract sender number from the offline message format (assuming it is "senderNumber: messageContent")
+                        String[] messageParts = offlineMessage.split(": ", 2);
+                        if (messageParts.length == 2) {
+                            String senderNumber = messageParts[0]; // Get the sender's number
+                            String messageContent = messageParts[1]; // Get the actual message
+    
+                            // Send the message to the online recipient (this user)
+                            sendMessageToSession(session, offlineMessage);
+    
+                            // Notify the sender (if they are online) with the "DELIVERED" status
+                            WebSocketSession senderSession = userSessions.get(senderNumber);
+                            if (senderSession != null) {
+                                sendMessageToSession(senderSession, "DELIVERED:" + userNumber + ":" + messageContent);
+                            }
+                        }
                     }
+                    // Remove the messages from offline storage after processing
                     offlineMessages.remove(userNumber);
                 }
                 System.out.println("User registered: " + userNumber);
             }
         }
     }
+    
 
     private void handleMessage(@NonNull String message, @NonNull WebSocketSession session) throws IOException {
+        // Splitting message in the form of TO:recipientNumber:encryptedMessage
         String[] parts = message.split(":", 3);
+        
         if (parts.length == 3 && "TO".equals(parts[0])) {
-            String recipientNumber = parts[1];
-            String messageContent = parts[2];
-            String senderNumber = getUserNumberBySession(session);
-
+            String recipientNumber = parts[1];        // Recipient's phone number
+            String messageContent = parts[2];         // Encrypted message content
+            String senderNumber = getUserNumberBySession(session);  // Get sender's number from session
+    
+            // Check if the recipient is online by looking up the WebSocketSession
             WebSocketSession recipientSession = userSessions.get(recipientNumber);
+            
             if (recipientSession != null) {
+                // If the recipient is online, send the message directly
                 sendMessageToSession(recipientSession, senderNumber + ": " + messageContent);
+    
+                // Send a 'DELIVERED' status back to the sender, showing the recipient number and message
+                sendMessageToSession(session, "DELIVERED:" + recipientNumber + ":" + messageContent);
+    
             } else {
-                // Check if the recipient exists in the database
+                // If the recipient is offline, check if the recipient exists
                 if (recipientExists(recipientNumber)) {
-                    // Store the message for offline recipient
-                    storeOfflineMessage(recipientNumber, senderNumber + ": " + messageContent);
+                    // Store the offline message in a queue to be delivered later
+                    messageService.saveMessage(senderNumber, recipientNumber, messageContent);
+    
+                    // Notify the sender that the message is sent but not delivered
+                    sendMessageToSession(session, "SENT:" + recipientNumber + ":" + messageContent);
                 } else {
-                    // If the recipient doesn't exist, send an error message to the sender
+                    // Notify the sender if the recipient does not exist
                     sendMessageToSession(session, "ERROR: Recipient " + recipientNumber + " does not exist.");
                 }
             }
         }
     }
+    
+    
 
     private void sendMessageToSession(@NonNull WebSocketSession session, @NonNull String message) {
         try {
@@ -129,9 +173,14 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    private void storeOfflineMessage(@NonNull String recipientName, @NonNull String message) {
-        offlineMessages.computeIfAbsent(recipientName, k -> new ConcurrentLinkedQueue<>()).add(message);
-        System.out.println("Stored offline message for " + recipientName);
+    public void sendOfflineMessages(String receiverNumber, WebSocketSession session) throws IOException {
+        // Retrieve messages from the database for the user
+        List<Message> messages = messageService.getMessagesForUser(receiverNumber);
+
+        // Send each message to the recipient
+        for (Message msg : messages) {
+            sendMessageToSession(session, msg.getSenderNumber() + ": " + msg.getMessageContent());
+        }
     }
 
     private String getUserNumberBySession(@NonNull WebSocketSession session) {
