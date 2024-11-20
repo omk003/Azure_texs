@@ -2,7 +2,7 @@ package com.example.chat_management.service;
 
 import com.example.chat_management.model.UserStatus;
 import com.example.chat_management.repository.UserStatusRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -13,7 +13,6 @@ public class UserStatusService {
 
     private final UserStatusRepository userStatusRepository;
 
-    @Autowired
     public UserStatusService(UserStatusRepository userStatusRepository) {
         this.userStatusRepository = userStatusRepository;
     }

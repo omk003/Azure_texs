@@ -2,7 +2,11 @@ package com.example.chat_management.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.example.chat_management.model.User;
 import com.example.chat_management.service.UserService;
@@ -18,6 +22,8 @@ public class UserController {
 
     @PostMapping("/users/register")
     public ResponseEntity<String> registerUser(@RequestBody User user, HttpSession session) {
+        System.out.println("Received User: " + user);
+
         if (userService.isUsernameTaken(user.getUsername())) {
             return ResponseEntity.badRequest().body("Username is already taken.");
         }

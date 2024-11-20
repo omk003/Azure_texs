@@ -8,7 +8,6 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import com.example.chat_management.model.UserStatus;
 import com.example.chat_management.repository.UserStatusRepository;
-import com.example.chat_management.service.ChatService;
 import com.example.chat_management.service.MessageService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +22,6 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.List;
 
 
@@ -33,8 +31,6 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private static final Map<String, WebSocketSession> userSessions = new ConcurrentHashMap<>();
     private static final Map<String, Queue<String>> offlineMessages = new ConcurrentHashMap<>();
 
-    @Autowired
-    private ChatService chatService;
 
     @Autowired
     private MessageService messageService;
@@ -44,7 +40,6 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     private final JdbcTemplate jdbcTemplate;
 
-    @Autowired
     public ChatWebSocketHandler(DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }

@@ -2,7 +2,7 @@ package com.example.chat_management.controller;
 
 import com.example.chat_management.model.UserStatus;
 import com.example.chat_management.service.UserStatusService;
-import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,7 +13,6 @@ public class UserStatusController {
 
     private final UserStatusService userStatusService;
 
-    @Autowired
     public UserStatusController(UserStatusService userStatusService) {
         this.userStatusService = userStatusService;
     }

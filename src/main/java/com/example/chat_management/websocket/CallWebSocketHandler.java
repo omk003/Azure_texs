@@ -1,8 +1,12 @@
 package com.example.chat_management.websocket;
 
 import com.example.chat_management.service.CallService;
+
+import io.micrometer.common.lang.NonNull;
+
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
+
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -23,7 +27,7 @@ public class CallWebSocketHandler implements WebSocketHandler {
     }
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+    public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
         // When a connection is established, add the session to the active sessions
         String userId = getUserIdFromSession(session);
         sessions.put(userId, session);
@@ -33,7 +37,7 @@ public class CallWebSocketHandler implements WebSocketHandler {
     }
 
     @Override
-    public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
+    public void handleMessage(@NonNull WebSocketSession session, @NonNull WebSocketMessage<?> message) throws Exception {
         // Parse the incoming message
         String payload = message.getPayload().toString();
         
@@ -62,13 +66,13 @@ public class CallWebSocketHandler implements WebSocketHandler {
     }
 
     @Override
-    public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
+    public void handleTransportError(@NonNull WebSocketSession session, @NonNull Throwable exception) throws Exception {
         // Handle errors during transport
         session.close();
     }
 
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
+    public void afterConnectionClosed(@NonNull WebSocketSession session, @NonNull CloseStatus closeStatus) throws Exception {
         // Remove the session when the connection is closed
         String userId = getUserIdFromSession(session);
         sessions.remove(userId);
