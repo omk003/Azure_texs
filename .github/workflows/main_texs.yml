@@ -51,19 +51,6 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_A15E7A2D0D934670B56BA474D234F970 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_768531990D4D4A56849F4AC7E3CEFE43 }}
           
-      - name: Stop Azure Web App
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az webapp stop --name texs --resource-group YOUR_RESOURCE_GROUP
-            
-      - name: Clean Web App Directory
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'texs'
-          slot-name: 'Production'
-          clean: true
-          
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
@@ -71,9 +58,4 @@ jobs:
           app-name: 'texs'
           slot-name: 'Production'
           package: '*.jar'
-          
-      - name: Start Azure Web App
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az webapp start --name texs --resource-group YOUR_RESOURCE_GROUP
+          clean: true  # This will clean the target directory before deployment
