@@ -1,16 +1,15 @@
 package com.example.chat_management.service;
 
 
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.chat_management.model.User;
 import com.example.chat_management.repository.UserRepository;
-
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-
-import java.util.Optional;
 
 @Service
 public class UserService {
@@ -30,27 +29,40 @@ public class UserService {
         return userRepository.existsByUsername(username);
     }
 
+    public boolean isContactTaken(String contact) {
+        return userRepository.existsByContactNumber(contact);
+    }
+
     public User registerUser(User user) {
-        String hashedPassword = hashPassword(user.getPassword());
-        user.setPassword(hashedPassword);
         return userRepository.save(user);
     }
 
     public User validateUserCredentials(String username, String password) {
         Optional<User> user = userRepository.findByUsername(username);
-        if (user.isPresent() && passwordEncoder.matches(password, user.get().getPassword())) {
-            return user.get();
-        }
+        //remove this code
         return null; // or throw an exception
     }
 
-    private String hashPassword(String password) {
-        return passwordEncoder.encode(password);
+    // Method to find a user by contact number
+    public User findByContactNumber(String contactNumber) {
+        Optional<User> user = userRepository.findByContactNumber(contactNumber);
+
+        if (user.isPresent()) {
+            return user.get();
+        } else {
+            throw new RuntimeException("User with contact number " + contactNumber + " not found.");
+        }
     }
 
-    public void saveSession(String sessionId, Long userId) {
-        String query = "INSERT INTO sessions (session_id, user_id) VALUES (?, ?)";
-        jdbcTemplate.update(query, sessionId, userId);
+     // Method to save or update a user
+     public void save(User user) {
+        userRepository.save(user);
+    }
+    
+
+    public void saveSession(String uid, String phonenumber) {
+        String query = "INSERT INTO sessions (uid, phonenumber) VALUES (?, ?) ON DUPLICATE KEY UPDATE uid = VALUES(uid);";
+        jdbcTemplate.update(query, uid, phonenumber);
     }
     
 }

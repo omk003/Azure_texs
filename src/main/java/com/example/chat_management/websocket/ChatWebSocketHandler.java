@@ -1,28 +1,28 @@
 package com.example.chat_management.websocket;
 
-import com.example.chat_management.model.Message;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+import com.example.chat_management.model.Message;
 import com.example.chat_management.model.UserStatus;
 import com.example.chat_management.repository.UserStatusRepository;
 import com.example.chat_management.service.MessageService;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.stereotype.Component;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.lang.NonNull;
-
-import javax.sql.DataSource;
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.List;
 
 
 @Component
@@ -187,7 +187,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     private String fetchUserNumberFromSessionID(@NonNull String sessionID) {
         System.out.println("s_id: " + sessionID);
-        String query = "SELECT u.contact_number FROM sessions s INNER JOIN users u ON s.user_id = u.id WHERE s.session_id = ?";
+        String query = "SELECT phonenumber FROM sessions WHERE uid = ?";
 
         try {
             return this.jdbcTemplate.queryForObject(query, String.class, sessionID);

@@ -1,5 +1,7 @@
 package com.example.chat_management.controller;
 
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,34 +26,46 @@ public class UserController {
     public ResponseEntity<String> registerUser(@RequestBody User user, HttpSession session) {
         System.out.println("Received User: " + user);
 
-        if (userService.isUsernameTaken(user.getUsername())) {
-            return ResponseEntity.badRequest().body("Username is already taken.");
+        boolean check  = userService.isContactTaken(user.getContactNumber());
+        if(check){
+            User checkUser = userService.findByContactNumber(user.getContactNumber());
+            checkUser.setUsername(user.getUsername());
+            userService.save(checkUser);
+
+        }else{
+            userService.registerUser(user);
         }
-        User registeredUser = userService.registerUser(user);
+
+        
 
         // Store user info in session
-        session.setAttribute("username", registeredUser.getUsername());
+        //session.setAttribute("username", registeredUser.getUsername());
 
         // Save session ID to the database
-        userService.saveSession(session.getId(), registeredUser.getId());
+        // deprecated way, now we are only using login to store sessionID
+        //userService.saveSession(session.getId(), registeredUser.getId());
 
         return ResponseEntity.ok("Registration successful.");
     }
 
     @PostMapping("/users/login")
-    public ResponseEntity<String> login(@RequestBody User user, HttpSession session) {
-        User validatedUser = userService.validateUserCredentials(user.getUsername(), user.getPassword());
-        if (validatedUser == null) {
-            return ResponseEntity.status(401).body("Invalid username or password.");
-        }
+    public ResponseEntity<String> login(@RequestBody Map<String, String> payload, HttpSession session) {
+        String phoneNumber = payload.get("phoneNumber");
+        String uid = payload.get("uid");
+
+        // User validatedUser = userService.validateUserCredentials(user.getUsername(), user.getPassword());
+        // if (validatedUser == null) {
+        //     return ResponseEntity.status(401).body("Invalid username or password.");
+        // }
 
         // Store user info in session
-        session.setAttribute("username", validatedUser.getUsername());
+        // deprecated authentication system
+        //session.setAttribute("username", validatedUser.getUsername());
 
         // Save session ID to the database
-        userService.saveSession(session.getId(), validatedUser.getId());
+        userService.saveSession(uid, phoneNumber);
 
-        return ResponseEntity.ok("Login successful.");
+        return ResponseEntity.ok("User registered and session created successfully.");
     }
 
     @GetMapping("/users/logout")

@@ -1,15 +1,20 @@
 package com.example.chat_management.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -49,14 +54,14 @@ public class UserSearchController {
 
     // Method to check if the session is valid
     private boolean isSessionValid(String sessionId) {
-        String query = "SELECT COUNT(*) FROM sessions WHERE session_id = ?";
+        String query = "SELECT COUNT(*) FROM sessions WHERE uid = ?";
         Integer count = jdbcTemplate.queryForObject(query, Integer.class, sessionId);
         return count != null && count > 0;
     }
 
     // Method to search users by username
     private List<Map<String, Object>> searchUsername(String query) {
-        String sql = "SELECT id, username FROM users WHERE username LIKE ?";
+        String sql = "SELECT username, contact_number FROM users WHERE contact_number LIKE ?";
         return jdbcTemplate.queryForList(sql, "%" + query + "%");
     }
 
